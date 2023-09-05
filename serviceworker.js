@@ -16,14 +16,12 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        caches.open("assets").then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
+    caches.match(event.request).then((response) => {
+      caches.open("assets").then((cache) => {
+        cache.put(event.request, networkResponse.clone());
+        return networkResponse;
       });
-      return cachedResponse || fetchPromise;
+      return response;
     })
   );
 });
