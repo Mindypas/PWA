@@ -17,11 +17,11 @@ self.addEventListener("install", (e) => {
 self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      caches.open("assets").then((cache) => {
-        cache.put(event.request, networkResponse.clone());
-        return networkResponse;
-      });
-      return response;
+      if (response) {
+        return response;
+      } else {
+        return fetch(event.request);
+      }
     })
   );
 });
