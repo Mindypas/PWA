@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, viewport-fit=cover" />
+    <title>Note storing</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="manifest" href="app.webmanifest" />
+    <link rel="app-touch-icon" href="icons/icon-512.png" />
+    <script src="sw-register.js"></script>
+    <script src="app.js"></script>
+  </head>
+
+  <body>
+    <h1>Store your notes</h1>
+    <form>
+      <textarea placeholder="Enter your new note"></textarea>
+      <ul id="toolbar">
+        <li>
+          <button type="submit">
+            <span class="icon">save</span>
+            Save
+          </button>
+        </li>
+      </ul>
+    </form>
+
+    <ul id="notes"></ul>
+  </body>
+</html>
