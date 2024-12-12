@@ -8,7 +8,7 @@ const openDB = async () => {
       const dataBase = request.result;
       if (!dataBase.objectStoreNames.contains("NotesStore")) {
         dataBase.createObjectStore("NotesStore", {
-          autoIncrement: true,
+          keyPath: "id",
         });
       }
     };
@@ -22,7 +22,8 @@ const addNote = async (noteContent) => {
   try {
     const transaction = db.transaction("NotesStore", "readwrite");
     const store = transaction.objectStore("NotesStore");
-    const request = store.add({ content: noteContent });
+    const id = Date.now();
+    const request = store.add({ id: id, content: noteContent });
 
     return new Promise((resolve, reject) => {
       request.onsuccess = resolve;
