@@ -1,46 +1,130 @@
-var notes = [];
+let db;
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (localStorage.getItem("notes")) {
-    notes = JSON.parse(localStorage.getItem("notes"));
+const openDB = async () => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("NotesDB");
+
+    request.onupgradeneeded = () => {
+      const dataBase = request.result;
+      if (!dataBase.objectStoreNames.contains("NotesStore")) {
+        dataBase.createObjectStore("NotesStore", {
+          autoIncrement: true,
+        });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = (event) => reject(event.target.error);
+  });
+};
+
+const addNote = async (noteContent) => {
+  try {
+    const transaction = db.transaction("NotesStore", "readwrite");
+    const store = transaction.objectStore("NotesStore");
+    const request = store.add({ content: noteContent });
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = resolve;
+      request.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error("Error adding note:", error);
+  }
+};
+
+const deleteNote = async (id) => {
+  try {
+    const transaction = db.transaction("NotesStore", "readwrite");
+    const store = transaction.objectStore("NotesStore");
+    const request = store.delete(id);
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = resolve;
+      request.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error("Error deleting note:", error);
+  }
+};
+
+const getNotes = async () => {
+  try {
+    const transaction = db.transaction("NotesStore", "readonly");
+    const store = transaction.objectStore("NotesStore");
+    const request = store.getAll();
+
+    return new Promise((resolve, reject) => {
+      request.onsuccess = (event) => resolve(event.target.result);
+      request.onerror = (event) => reject(event.target.error);
+    });
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+  }
+};
+
+const renderNotes = async () => {
+  try {
+    const notes = await getNotes();
+    const ul = document.querySelector("#notes");
+    ul.innerHTML = "";
+    notes.forEach((note) => {
+      const li = document.createElement("li");
+      li.innerHTML = note.content;
+
+      const deleteButton = document.createElement("a");
+      deleteButton.innerHTML = '<span class="icon">delete</span>';
+      deleteButton.addEventListener("click", () => handleDelete(note.id));
+
+      li.appendChild(deleteButton);
+      ul.appendChild(li);
+    });
+  } catch (error) {
+    console.error("Error rendering notes:", error);
+  }
+};
+
+const handleDelete = async (id) => {
+  if (confirm("Do you want to delete this note?")) {
+    try {
+      await deleteNote(id);
+      await renderNotes();
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+  }
+};
+
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  const noteContent = document.querySelector("textarea").value.trim();
+
+  if (!noteContent.length) {
+    alert("You didn't input any content");
+    return;
   }
 
-  renderNotes();
+  try {
+    await addNote(noteContent);
+    document.querySelector("textarea").value = "";
+    await renderNotes();
+  } catch (error) {
+    console.error("Error adding note:", error);
+  }
+};
 
-  document.querySelector("form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const note = document.querySelector("textarea").value;
-    if (note.length == 0) {
-      alert("You didn't input any content");
-    } else {
-      notes.push(note);
-      renderNotes();
-      save();
-      document.querySelector("textarea").value = "";
-    }
-  });
+const initializeDatabase = async () => {
+  try {
+    db = await openDB();
+    await renderNotes();
+  } catch (error) {
+    console.error("Error initializing database:", error);
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form");
+  form.addEventListener("submit", handleSubmit);
+
+  initializeDatabase();
 });
-
-const renderNotes = () => {
-  const ul = document.querySelector("#notes");
-  ul.innerHTML = "";
-  notes.forEach((note, index) => {
-    const li = document.createElement("li");
-    li.innerHTML = note;
-    const deleteButton = document.createElement("a");
-    deleteButton.innerHTML = '<span class="icon">delete</span>';
-    deleteButton.addEventListener("click", (event) => {
-      if (confirm("Do you want to delete this note?")) {
-        notes.splice(index, 1);
-        renderNotes();
-        save();
-      }
-    });
-    li.appendChild(deleteButton);
-    ul.appendChild(li);
-  });
-};
-
-const save = () => {
-  localStorage.setItem("notes", JSON.stringify(notes));
-};
